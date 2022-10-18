@@ -1,4 +1,11 @@
+# mac problems
 .DS_Store
 /.DS_Store
+
 .proj
+
+# keep data local
 data
+
+# update linting in vscode
+.lintr

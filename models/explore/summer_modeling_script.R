@@ -12,7 +12,7 @@ select <- dplyr::select
 
 
 # loading in pixel level population data
-pixel_data <- read_csv(here("data", "pixel_population_level", "pixel_m333_ba.csv"))
+pixel_data <- read_csv(here("data", "pixel_m333_ba.csv"))
 
 pixel_data <- pixel_data %>% 
   rename(BA = BA_new)
@@ -82,13 +82,13 @@ full_samples_gen <- function(k, data) {
 # samples_100n <- full_samples_gen(k = 800, pixel_data)
 
 # sample data
-samples_30n <- read_csv(here("data", "sim_samples", "samples_30n.csv")) %>% 
+samples_30n <- read_csv(here("data", "knn_imputed_sim_samples", "samples_30n.csv")) %>% 
   mutate(s_size = 30) %>% 
   rename(BA = BA_new)
-samples_50n <- read_csv(here("data", "sim_samples", "samples_50n.csv")) %>% 
+samples_50n <- read_csv(here("data", "knn_imputed_sim_samples", "samples_50n.csv")) %>% 
   mutate(s_size = 50) %>% 
   rename(BA = BA_new)
-samples_100n <- read_csv(here("data", "sim_samples", "samples_100n.csv")) %>% 
+samples_100n <- read_csv(here("data", "knn_imputed_sim_samples", "samples_100n.csv")) %>% 
   mutate(s_size = 100) %>% 
   rename(BA = BA_new)
 
