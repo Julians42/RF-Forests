@@ -1,9 +1,9 @@
 # R on FASRC
 
-Sometimes packages aren't available for certain modules. For example the `randomForest` package requires `R >= 4.1.0` and so the preferred build on the cluster of `R = 4.0.2` won't fly. The minimum required `R` version is listed in the package vignette. 
+Sometimes packages aren't available for certain modules. For example the `randomForest` package requires `R >= 4.1.0` and so the preferred build on the cluster of `R = 4.0.2` won't fly. The minimum required `R` version is listed in the package vignette. FASRC currently only has up to module `R = 4.1.0`.
 
 
-## My recommendation for the file system
+## Our configuration
  - Batch Script (ex. `job_rf.batch`): This script specifies the SBATCH job constraints and contains the `R` script we want to run.
     - R Package Script (ex. `install_packages.R`): script which can be run with `R CMD BATCH` to install 
     - Job script - can specify command line arguments with `"--args a=0 b=1"`
