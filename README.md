@@ -6,6 +6,9 @@
 
 
 ## Update Nov 2
+Links:
+* https://www.fs.usda.gov/research/treesearch 
+
 See the overleaf for a draft of RF and SMERF methods. The following questions arose when writing these methods:
 * Do we want to ceiling estimates to zero at some point in the SMERF function since `BA` can't be negative? Or will this bias our results?
 * Krennmair et al. say "For non-sampled areas, the proposed estimator for the area level means reduces to the fixed part for the RF" $\hat{\nu}_i = \frac{1}{N_i} \sum_{j \in U_i} \hat{f}(x_{ij})$. *Note* Now realizing this just means we ignore the means term for subsections where there are zero sampled observations. 
@@ -42,3 +45,14 @@ The next project goal is implementing a mixed effects random forest model (MERF)
 On the other hand, I am concerned about the computation problem if we end up coding our own MERF model as the iterative approach would mean we'll need to predict the 3 million pixels potentially 100 times (or whatever max_iter is set as). 
 
 The other package option is to contact on of the authors of the paper that implements a similar MERF model to see if i can get their code. 
+
+
+## FASRC Resources
+* Home: [fasrc homepage](https://www.rc.fas.harvard.edu)
+* Examples: [user codes](https://github.com/fasrc/User_Codes)
+* Submitting a lot of jobs: [multiple job submissions](https://docs.rc.fas.harvard.edu/kb/submitting-large-numbers-of-jobs/)
+* Non embarassingly parallel jobs: [openmpi](https://docs.rc.fas.harvard.edu/kb/parallel-computing-on-odyssey/)
+
+## Other Resources
+* [FIA treesearch](https://www.fs.usda.gov/research/treesearch)
+* 
