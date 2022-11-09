@@ -5,6 +5,10 @@
  * Forget the Lorax, I am a SMERF and I speak for the trees: Comparing Sae Mixed-Effects Random Forest (SMERF) models to other estimators in FIA data. 
 
 
+# Update November 9
+I went back and just modified the MixRF package to our case (literally just changing args and grabbing new output but the random effects didn’t really “converge” for their model either? It just ran until the loglikelihood difference between iterations was small enough (and it looked like they were just jumping around and getting lucky). So maybe my implementation that I thought was wrong was actually correct? Anyway it interesting that we don’t actually see nice convergence - I wonder if this is something we could look at and try to improve in the model?
+
+
 ## Update Nov 2
 Links:
 * https://www.fs.usda.gov/research/treesearch 

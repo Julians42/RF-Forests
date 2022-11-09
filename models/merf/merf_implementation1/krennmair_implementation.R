@@ -10,21 +10,18 @@ merf_wrapper <- function(formula, sample_size = "100", reps = 2000, pop_dat = pi
 
     # parallelize over samples
     sim_runs <- foreach(i = 1:reps) %dopar% {
-        #.GlobalEnv$
+        print(str_interp("Running Simulation ${i}...", 
+                                    list(i=i)))
         return(SMERF(samp_dat = sample_list[[i]], pop_dat = pop_dat, 
         formula = as.formula(formula), domain_level = domain_level, initial_random_effects = initial_random_effects,
         max_iter = max_iter, loglik_error_tol = loglik_error_tol, ntree = ntree, mtry = mtry,
         nodesize = nodesize, maxnodes = maxnodes, importance = importance))
         gc()
     }
-    return(sim_runs)
-#     # bind to full dataframe
-#     full_res = bind_rows(sim_runs)
-    
-#     return(full_res)
-
+    return(bind_rows(sim_runs))
 }
 
+#dd <- merf_wrapper("BA~evi+tcc16", sample_size = "30", reps = 2, max_iter = 5, loglik_error_tol = 0.5)
 
 SMERF <- function(samp_dat, pop_dat, formula, domain_level = "SUBSECTION", 
                 initial_random_effects = 0, max_iter = 100, loglik_error_tol = 0.001,
@@ -82,12 +79,12 @@ SMERF <- function(samp_dat, pop_dat, formula, domain_level = "SUBSECTION",
 
                 continue_condition <- (abs(newloglik - oldloglik) > loglik_error_tol & b < max_iter)
 
-                # a: adjust to y* - nothing to be done on first step so we update at end of each iteration
+                # a: adjust to y* by removing the fixed effects - nothing to be done on first step so we update at end of each iteration
                 adjusted_df <- samp_dat %>% left_join(fixed_effects, by = c("SUBSECTION" = 'domain')) %>%
                                 mutate(adjusted = BA - fixeff)
                 adjusted_target <- adjusted_df$adjusted
         }
-        return(fixed_effects_list)
+        #return(fixed_effects_list)
 
         # compute section estimates on auxiliary data using MERF model by predicting on sample per K&S2022
         mu_merf <- data.table(rf_pred = predict(rf, pop_dat), 
@@ -97,20 +94,11 @@ SMERF <- function(samp_dat, pop_dat, formula, domain_level = "SUBSECTION",
                     summarize(rf_pred = mean(rf_pred), BA = mean(BA)) %>%
                     left_join(fixed_effects, by = "domain") %>%
                     mutate(BA_hat = rf_pred+fixeff, model = "MERF") %>%
-                    dplyr::select(BA_hat, BA, model)
+                    dplyr::select(BA_hat, BA, model, domain)
 
-        return(list(forest = rf, mixed_model = l, iterations = b, mu_merf = mu_merf))
+        return(mu_merf)
+        #return(list(forest = rf, mixed_model = l, iterations = b, mu_merf = mu_merf))
 }
 
 # # example function call
-t_data <- SMERF(all_sim_samples[["100"]][[1]], pixel_data, "BA ~ tcc16+evi", max_iter = 100)
-t_data
-
-
-
-
-tdata2 <- t_data
-# library(data.table)
-# pixel_data %>% select("BA")
-# samp = all_sim_samples[["100"]][[1]]
-# samp %>% select("BA")
+#t_data <- SMERF(all_sim_samples[["100"]][[1]], pixel_data, "BA ~ tcc16+evi", max_iter = 100)

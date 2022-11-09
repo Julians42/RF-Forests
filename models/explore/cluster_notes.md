@@ -38,6 +38,7 @@ R CMD BATCH --quiet --no-restore --no-save "--args s=30 reps=10" RF_CL_RUN02.R o
    - `squeue` - shows all jobs, their job status (running, in queue, interrupted, etc), and JOBID
    - `scontrol show job <JOBID>` - shows complete information about job, including what node(s) it's running on
    - `ssh <NODENAME>` and `htop` can be used to monitor the job on the cluster 
+   - `sacct` - tells you job status of all jobs that you've recently run. This is helpful if you get confused after running a lot of test jobs haha 
 
 
 ## Troubleshooting

@@ -11,17 +11,7 @@ samp = all_sim_samples[["100"]][[3]]
 data = list(works = all_sim_samples[["30"]][[1]], doesnt = samp)
 saveRDS(data, "debugdata.RDS")
 
-wrap.MixRF <- function(Y, X, data, pop_data, random = "(1 | SUBSECTION)" initialRandomEffects = 0, ErrorTolerance = 0.01, MaxIterations = 100, 
-                 importance = FALSE, ntree = 500, mtry = max(floor(ncol(X)/3), 1), nodesize = 5, maxnodes = NULL) {
-                        # fit MixRF model
-                        mixmerf <- MixRF(Y = Y, X = X, random = random, data = data, initialRandomEffects = initialRandomEffects, 
-                        ErrorTolerance = ErrorTolerance, MaxIterations = MaxIterations, importance = importance, ntree = ntree, 
-                        mtry = mtry, nodesize = nodesize, maxnodes = maxnodes)
 
-                        # predict and add residuals
-                        preds <- predict(mixmerf$forest, pop_data)
-
-                 }
 
 # fit to MixRF
 merf1 <- MixRF(Y = samp$BA, X = samp %>% select(evi, tcc16, tmin, tmin01), 
