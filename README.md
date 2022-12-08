@@ -5,8 +5,23 @@
  * Forget the Lorax, I am a SMERF and I speak for the trees: Comparing Sae Mixed-Effects Random Forest (SMERF) models to other estimators in FIA data. 
 
 
+# New Ideas December 8
+## Option 1
+Using `tsumdatc` we have access to 37,000 obs which have 17,000 non-NA values for BA live (potential problem with systematic bias?) 1,444/17000 are zero observations, so less than 10% ZI. We have 160 counties across 4 states which is still 100 obs per small area, so would be a reasonable population if we build estimators off 10-20 observations. We have access to fuzzed lat/lon and so we could pull temperature data from PRISM CONUS fairly easily. Additional variables given include elevation, distance to road (could be interesting!), a bunch of codes, stand age, livestock status (live stocking?), tree canopy cover, and total tree volume. 
+
+All variables are listed in the meta folder of the states dataset from tracy on UFDS google drive - over 100 columns to potentially choose from. Since we have year and month, I'd be interested at looking at how estimates have changed over time (over the years) or maybe trying to detect seasonal change (which maybe is measurement bias) by looking at changes across months. Most measurements are in June/September. 
+
+## Option 2
+Using `pltassgn` we could predict tcc16 using elev, ppt, tmean, tmmin01, tri, def, and tnt. The dataset has 17% zeros with 26,000 total observations. We could then predict over the 4 states using either sections (40), subsections (198), or county fips (338). There would be minimal changes to the code to run this scenario and given 26,000 << 3 million we could almost certainly run these locally which would save some time. 
+
+Upside to this option is that we have section information which means we can target ecologically homogeneous regions as opposed to counties which aren't necessarily divided based on ecology. Definite downside to this method is that we're predicting tcc not BA which can be easily remote sensed. 
+
+## Option 3
+Using `tsumdatp` we have access to `CCLIVEPLT` which is a variable for the percent cover of live trees. It has 45% zero observations! We have access to county and state fips but not ecological regions (we could assign them but we'd need a raster file of observations). We have time collected. Predictor variables include elevation and then we'd have to grab temperature and precip values by lat/lon from PRISM. This option has fewer predictor variables than Option #1 but has more observations and higher zero inflation. 
+
 # Update November 9
 I went back and just modified the MixRF package to our case (literally just changing args and grabbing new output but the random effects didn’t really “converge” for their model either? It just ran until the loglikelihood difference between iterations was small enough (and it looked like they were just jumping around and getting lucky). So maybe my implementation that I thought was wrong was actually correct? Anyway it interesting that we don’t actually see nice convergence - I wonder if this is something we could look at and try to improve in the model?
+https://www.srs.fs.usda.gov/pubs/ja/2022/ja_2022_brandeis_003.pdf - comparative study of RF and MERF for predicting tree diamater to height ratios. Was found to be an effective way to handle high-dimensional/complex data sets. The combined detailed environmental data to boost predictive power.
 
 
 ## Update Nov 2
