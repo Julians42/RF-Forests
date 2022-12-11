@@ -13,7 +13,7 @@ setwd("~/Documents/Research/Thesis/RF-Forests/models/toy/")
 
 source("models_toy.R")
 
-sim_reps = 20 # up to 500
+sim_reps = 500 # up to 500
 n_small_areas = 8
 
 set.seed(101)
@@ -98,7 +98,7 @@ res32 = ps_estimator("32", full_samp) %>% rename(BA_hat = y_hat, BA = y)%>% head
 # concatenate to full results df
 ps_results <- list(res8, res16, res32) %>% reduce(full_join)
 
-
+print(ps_results)
 ########################### RF ################################
 rf_res8 = rf_wrapper("y ~ noise1+noise2+real_x", "8", xpop = full_samp, reps=sim_reps, domain_level = "domain")
 rf_res16 = rf_wrapper("y ~ noise1+noise2+real_x", "8", xpop = full_samp, reps=sim_reps, domain_level = "domain")
@@ -106,7 +106,7 @@ rf_res32 = rf_wrapper("y ~ noise1+noise2+real_x", "8", xpop = full_samp, reps=si
 
 rf_results <- list(rf_res8, rf_res16, rf_res32) %>% reduce(full_join) %>% 
         mutate(sample_size = as.character(sample_size))
-
+print(rf_results)
 
 ########################### SMERF ################################
 smerf8 <- merf_wrapper("y ~ noise1+noise2+real_x", sample_size = "8", 
@@ -158,12 +158,133 @@ all_results = list(ps_results, rf_results, smerf_results, aeblup_results, ueblup
 
 
 
-all_results %>% write.csv("~/Documents/Research/Thesis/RF-Forests/models/toy/results20.csv")
+all_results %>% write.csv("~/Documents/Research/Thesis/RF-Forests/models/toy/results500.csv")
 
-# all_results %>% group_by(model) %>%
-#   summarize(cnt = n())
-# bias_results <- all_results %>% group_by(model, sample_size, domain) %>%
-#   summarize(bias = abs(mean(BA_hat) - mean(BA))) %>%
-#   group_by(model) %>%
-#   summarize(mean_bias = mean(bias))
-# bias_results
+
+
+######################## Evaluate and Plot ##############################
+all_results <- read.csv("~/Documents/Research/Thesis/RF-Forests/models/toy/results500.csv")
+
+all_results <- all_results %>% filter(model != "rf")
+
+# get bias results
+e_bias_results <- all_results %>% 
+  group_by(domain, model, sample_size) %>% 
+  summarise(sim_est = mean(BA_hat, na.rm = T), true_resp = mean(BA, na.rm = T)) %>% 
+  ungroup() %>% 
+  mutate(e_bias = sim_est - true_resp,
+         perc_rel_e_bias = (e_bias/true_resp)*100,
+         sample_size = as.factor(sample_size)) 
+
+# get empirical variance estimates
+e_var_results <- all_results %>% 
+  mutate(sample_size = as.factor(sample_size)) %>% 
+  left_join(e_bias_results, by = c("domain", "model", "sample_size")) %>% 
+  group_by(domain, model, sample_size) %>% 
+  summarise(e_var = (2000/1999)*mean((BA_hat - sim_est)^2)) %>% 
+  ungroup() 
+
+
+# plot bias
+unique(e_bias_results$model)
+
+e_bias_results %>% 
+  mutate(subsection = str_sub(domain, -2L, -1L)) %>% 
+  mutate(subsection_label = paste0("Subsection ", subsection)) %>% 
+  mutate(sample_size = fct_relevel(sample_size, c("8", "16", "32"))) %>% 
+  ggplot(aes(x = sample_size, y = abs(perc_rel_e_bias)/100, fill = model)) +
+  geom_col(position = "dodge", alpha = 0.9, color = "grey50") +
+  facet_wrap(~subsection_label, ncol = 4) +
+  scale_fill_manual(
+    values = c("#92abd6", "#3a32d1", "#d94c4c", "#96b88d"),
+    labels = c("Area EBLUP", "Post-Stratified",  "SMERF", "Unit EBLUP")
+  ) +
+  labs(x = "Sample Size", y = "Absolute Percent Relative Bias", fill = "Model") +
+  scale_y_continuous(labels = scales::percent) +
+  theme_bw() +
+  theme(
+    text = element_text(size = 20)
+  ) 
+
+
+
+
+e_var_results %>%
+  left_join(e_bias_results, by = c("domain", "model", "sample_size")) %>% 
+  mutate(e_mse = e_var + e_bias^2) %>% 
+  mutate(subsection = str_sub(domain, -2L, -1L)) %>% 
+  mutate(subsection_label = paste0("Subsection ", subsection)) %>% 
+  mutate(sample_size = fct_relevel(sample_size, c("30", "50", "100"))) %>% 
+  ggplot(aes(x = sample_size, y = e_mse, fill = model)) +
+  geom_col(position = "dodge", alpha = 0.9, color = "grey50") +
+  facet_wrap(~subsection_label, ncol = 4) +
+  scale_fill_manual(
+    values = c("#92abd6", "#3a32d1", "#d94c4c", "#96b88d"),
+    labels = c("Area EBLUP", "Post-Stratified",  "SMERF", "Unit EBLUP")
+  ) +
+  labs(x = "Sample Size", y = "Empirical MSE", fill = "Model") +
+  theme_bw()  +
+  theme(
+    text = element_text(size = 20)
+  )
+
+
+
+
+
+
+
+
+
+
+
+# e_bias_results %>% 
+#   mutate(subsection = str_sub(domain, -2L, -1L)) %>% 
+#   mutate(subsection_label = paste0("Subsection ", subsection)) %>% 
+#   mutate(sample_size = fct_relevel(sample_size, c("8", "16", "32"))) %>% 
+#   ggplot(aes(x = sample_size, y = abs(perc_rel_e_bias)/100, fill = model)) +
+#   geom_col(position = "dodge", alpha = 0.9, color = "grey50") +
+#   facet_wrap(~subsection_label, ncol = 4) +
+#   scale_fill_manual(
+#     values = c("#92abd6", "#3a32d1", "#d94c4c", "#bf60b7", "#96b88d"),
+#     labels = c("Area EBLUP", "Post-Stratified", "Random Forest", "SMERF", "Unit EBLUP")
+#   ) +
+#   labs(x = "Sample Size", y = "Absolute Percent Relative Bias", fill = "Model") +
+#   scale_y_continuous(labels = scales::percent) +
+#   theme_bw() +
+#   theme(
+#     text = element_text(size = 20)
+#   ) 
+# 
+# 
+# 
+# 
+# e_var_results %>%
+#   left_join(e_bias_results, by = c("domain", "model", "sample_size")) %>% 
+#   mutate(e_mse = e_var + e_bias^2) %>% 
+#   mutate(subsection = str_sub(domain, -2L, -1L)) %>% 
+#   mutate(subsection_label = paste0("Subsection ", subsection)) %>% 
+#   mutate(sample_size = fct_relevel(sample_size, c("30", "50", "100"))) %>% 
+#   ggplot(aes(x = sample_size, y = e_mse, fill = model)) +
+#   geom_col(position = "dodge", alpha = 0.9, color = "grey50") +
+#   facet_wrap(~subsection_label, ncol = 4) +
+#   scale_fill_manual(
+#     values = c("#92abd6", "#3a32d1", "#d94c4c", "#bf60b7", "#96b88d", "#e3a88a"),
+#     labels = c("Area EBLUP","MERF","Post-Stratified", "Random Forest", "Unit EBLUP", "Unit ZI")
+#   ) +
+#   labs(x = "Sample Size", y = "Empirical MSE", fill = "Model") +
+#   theme_bw()  +
+#   theme(
+#     text = element_text(size = 20)
+#   )
+
+
+
+
+all_results %>% group_by(model) %>%
+  summarize(cnt = n())
+bias_results <- all_results %>% group_by(model, sample_size, domain) %>%
+  summarize(bias = abs(mean(BA_hat) - mean(BA))) %>%
+  group_by(model) %>%
+  summarize(mean_bias = mean(bias))
+bias_results
