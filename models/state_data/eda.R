@@ -1,6 +1,8 @@
 library(tidyverse)
 library(here)
 
+setwd("~/Documents/Research/Thesis/RF-Forests/")
+
 georgia <- readRDS("../states/Georgia/pltassgn.rds")
 idaho <- readRDS("../states/Idaho/pltassgn.rds")
 iowa <- readRDS("../states/Iowa/pltassgn.rds")
@@ -41,7 +43,11 @@ plt_dat %>% head()
 colnames(plt_dat)
 dim(plt_dat)
 
+plt_dat %>%write.csv("/Users/julianschmitt/Documents/Research/Thesis/states/allv_carbon_dat_section.csv")
+
+
 sub_dat <- plt_dat %>% select(CN, PROVINCE, SECTION, SUBSECTION, tcc16, elev, ppt, tmean, tmin01, tri, tnt, def, CARBON_AG_TPA_live_ADJ, BA_TPA_live_ADJ, STATECD, COUNTYFIPS)
 dim(unique(sub_dat %>% select(SECTION)))
 sub_dat %>% write.csv("/Users/julianschmitt/Documents/Research/Thesis/states/carbon_dat_section.csv")
 
+sub_dat

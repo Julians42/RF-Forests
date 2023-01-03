@@ -118,3 +118,18 @@ df %>% dplyr::select(STATECD, COUNTYFIPS, CARBON_AG_TPA_live_ADJ) %>%
 
 ggsave("~/Downloads/dist_zero_obs_state.png",device=png, dpi=175)
 
+library(ggplot2)
+library(GGally)
+df %>% head()
+vars_sub = c("tcc16","elev","ppt","tmean", "tmin01", "tri", "tnt", "def", "CARBON_AG_TPA_live_ADJ")
+pp <-ggpairs(df[vars_sub], lower=list(continuous="density"))#+labs(title="Pair Plots for Selected Variables")
+
+pp+labs(title="Pair Plots and Correlation for Study Variables")
+
+
+# Look at all variables
+
+all <- read.csv("/Users/julianschmitt/Documents/Research/Thesis/states/allv_carbon_dat_section.csv")
+
+ggplot(data = all, aes(x=MEASYEAR))+geom_histogram() +facet_wrap(~STATECD)
+
