@@ -362,12 +362,6 @@ unit_eblup <- function(samp_dat, pop_dat_means, formula, domain_level = SUBSECTI
 #unit_eblup(samp, pixel_means, "y ~ noise1 + noise2 + real_x", domain_level = domain)
 
 
-
-
-
-
-
-
 #################### SCRATCH ##########################
 
 

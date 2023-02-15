@@ -20,6 +20,11 @@ bigs <- subdf %>% group_by(SECTION) %>%
 subdf_big <- subdf %>% filter(SECTION %in% bigs$SECTION)
 
 
+# write population dataframe with filtered sections
+df2 <- df %>% filter(SECTION %in% bigs$SECTION) %>% select(vars_sub)
+
+df2 %>% drop_na() %>% write.csv("/Users/julianschmitt/Documents/Research/Thesis/states/allv_carbon_dat_section_filtered.csv")
+bigs$SECTION
 
 # generate simulation samples for the toy data to match real - lets only do 500 samples for now
 sample_generation <- function(data, k, domain = "domain") {
@@ -46,6 +51,15 @@ full_gen <- function(data, k, reps=2000, domain = "domain") {
   
   samples_df
 }
+
+subdf_big_old <- subdf_big
+subdf_big <- subdf_big %>% drop_na()
+
+dim(subdf_big_old)
+dim(subdf_big)
+
+sim4 <- full_gen(subdf_big, 4,reps = 2000, "SECTION")
+sim4 %>% write.csv("/Users/julianschmitt/Documents/Research/Thesis/RF-Forests/data/state4_sim4_2000.csv")
 
 sim8 <- full_gen(subdf_big, 8,reps = 2000, "SECTION")
 sim8 %>% write.csv("/Users/julianschmitt/Documents/Research/Thesis/RF-Forests/data/state4_sim8_2000.csv")
