@@ -3,12 +3,14 @@
 
 library(tidyverse)
 library(lme4)
+library(latex2exp)
+source(here("models/state_data/state4_get_results.R"))
 
 pop.dat <- read.csv("/Users/julianschmitt/Documents/Research/Thesis/states/allv_carbon_dat_section_filtered.csv")
 
 
 sec.names <- unique(pop.dat$SECTION)
-pop.samp %>% filter(SECTION == sec.names[1]) %>% head()
+pop.dat %>% filter(SECTION == sec.names[1]) %>% head()
 
 pop.dat %>% group_by(SECTION) %>%
   summarise(cnt = n())
@@ -33,30 +35,45 @@ for (i in 1:30) {
 }
 r2ed.df <- r2ed.df %>% drop_na()
 
+r2.df.carbon <- r2ed.df %>% 
+  left_join(pop.dat %>% select(SECTION, CARBON_AG_TPA_live_ADJ) %>% 
+              group_by(SECTION) %>% 
+              summarize_all(mean), by = "SECTION")
+
 ########################## Bias by section R2 value #######################
-p.r2ed.df <- r2ed.df %>% full_join(tcc.bias, by = c("SECTION" = "domain")) %>% 
+mult <- 10
+p.r2ed.df <- r2.df.carbon %>% full_join(tcc.bias, by = c("SECTION" = "domain")) %>% 
   mutate(R2 = as.numeric(R2)) %>%
-  ggplot(aes(x = R2, y = abs(e_bias), color = model)) + #, shape = factor(sample_size)
-  geom_point()+
+  ggplot(aes(x = R2, y = perc_rel_e_bias, color = model)) + #, shape = factor(sample_size)
+  geom_point(aes(shape = factor(sample_size)))+
+  geom_line(aes(x = R2, y = CARBON_AG_TPA_live_ADJ*2.2417*mult), linetype = "dashed")+
   geom_smooth(method = "lm", se = FALSE) + 
   scale_color_manual(
     values = c("#92abd6", "#3a32d1", "#d94c4c", "#96b88d", "#fcba03", "#1e6e36"),
     labels = c("Area EBLUP", "Post-Stratified", "Random Forest", "SMERF", "Unit EBLUP", "Unit Zero-Inflated")
   ) +
-  labs(x = "R2", 
-       y = "Absolute Bias", 
+  labs(x = TeX("$R^2$"), 
+       y = "Percent Relative Bias", 
        color = "Model",
-       title = "Bias by Section R2 Value",
+       title = TeX("Bias by Section $R^2$ Value"),
        shape = "Sample Size",
-       subtitle = "Model with tcc, all sample sizes, R2 calculated from section regressions") +
+       subtitle = TeX("Models include tcc16 as predictor, $R^2$ calculated from section regressions")) +
+  scale_y_continuous(
+    sec.axis = sec_axis(
+      ~ . * 1/mult, 
+      name = "Carbon (metric tonnes per hectare)",
+      breaks = seq(0, 150, 25)
+    )
+  )+
   theme_bw()  +
   theme(
     legend.position = "bottom",
     text = element_text(size = 12),
     axis.text.x = element_text(angle = 60, hjust=1)
-  )
+  )#+
+  #ylim(-200,200)
 p.r2ed.df
-ggsave("/Users/julianschmitt/Documents/Research/Thesis/RF-Forests/visualization/r2/r2.tcc.bias_lr.png",
+ggsave("/Users/julianschmitt/Documents/Research/Thesis/RF-Forests/visualization/r2/r2.tcc.bias_lr2.png",
        device = "png",
        width = 9,
        height = 7,
@@ -67,34 +84,66 @@ tcc.emse2 <- tcc.emse %>%
   left_join(tcc.bias, by = c("domain", "model", "sample_size", "section", "state")) %>% 
   mutate(e_mse = e_var + e_bias^2)
 tcc.emse2
-
-r2.df.emse <- r2ed.df %>% full_join(tcc.emse2, by = c("SECTION" = "domain")) %>% 
+mult <- .2
+r2.df.emse <- r2.df.carbon %>% full_join(tcc.emse2, by = c("SECTION" = "domain")) %>% 
   mutate(R2 = as.numeric(R2)) %>%
-  ggplot(aes(x = R2, y = abs(e_mse), color = model)) + #, shape = factor(sample_size)
-  geom_point()+
+  ggplot(aes(x = R2, y = sqrt(e_mse), color = model)) + #, shape = factor(sample_size)
+  geom_point(aes(shape = factor(sample_size)))+
+  geom_line(aes(x = R2, y = CARBON_AG_TPA_live_ADJ*2.2417*mult), linetype = "dashed")+
   geom_smooth(method = "lm", se = FALSE) + 
   scale_color_manual(
     values = c("#92abd6", "#3a32d1", "#d94c4c", "#96b88d", "#fcba03", "#1e6e36"),
     labels = c("Area EBLUP", "Post-Stratified", "Random Forest", "SMERF", "Unit EBLUP", "Unit Zero-Inflated")
   ) +
-  labs(x = "R2", 
-       y = "Empirical MSE", 
+  labs(x = TeX("$R^2$ value"), 
+       y = "Root Mean Square Error", 
        color = "Model",
-       title = "EMSE by Section R2 Value",
+       title = TeX("RMSE by Section $R^2$ Value"),
        shape = "Sample Size",
-       subtitle = "Model with tcc, all sample sizes, R2 calculated from section regressions") +
-  theme_bw()  +
+       subtitle = TeX("Models include tcc16 as predictor, $R^2$ calculated from section regressions")) +
+  scale_y_continuous(
+    sec.axis = sec_axis(
+      ~ . * 1/mult, 
+      name = "Carbon (metric tonnes per hectare)",
+      breaks = seq(0, 150, 25)
+    )
+  )+
+  theme_bw()+
   theme(
     legend.position = "bottom",
     text = element_text(size = 12),
     axis.text.x = element_text(angle = 60, hjust=1)
-  )
+  )#+
+  # ylim(0, 100)
 r2.df.emse
 ggsave("/Users/julianschmitt/Documents/Research/Thesis/RF-Forests/visualization/r2/r2.tcc.emse_lr.png",
        device = "png",
        width = 9,
        height = 7,
        dpi = 200)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 head(r2.df.emse)
 colnames(tcc.bias)

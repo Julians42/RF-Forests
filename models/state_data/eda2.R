@@ -98,6 +98,8 @@ state_names <- c(
   `41` = "Oregon"
 )
 
+
+#### Figure 3 
 df %>% dplyr::select(STATECD, COUNTYFIPS, CARBON_AG_TPA_live_ADJ) %>% 
   group_by(STATECD, COUNTYFIPS) %>% 
   summarize(cnt = sum(CARBON_AG_TPA_live_ADJ==0)/n()) %>% 
@@ -105,18 +107,23 @@ df %>% dplyr::select(STATECD, COUNTYFIPS, CARBON_AG_TPA_live_ADJ) %>%
   #facet_wrap(~STATECD) + 
   scale_fill_manual(
     labels = c("Georgia", "Idaho", "Iowa", "Oregon"),
-    values = c("Yellow", "Green", "Red", "Blue"))+
+    values = c("#bdb404", "#227037", "Red", "Blue"))+
   scale_color_manual(
     labels = c("Georgia", "Idaho", "Iowa", "Oregon"),
-    values = c("Yellow", "Green", "Red", "Blue"))+
+    values = c("#bdb404", "#227037", "Red", "Blue"))+
   labs(x="Proportion Zero Observations", 
        y = "Counties (Count)", 
        fill = "State", 
        title="Distribution of Zero Observations by County")+
-  facet_grid(STATECD ~ ., labeller = as_labeller(state_names))+
-  guides(color="none")
+  facet_grid(STATECD ~ ., labeller = as_labeller(state_names), scales = "free_y")+
+  guides(color="none", fill = "none")+
+  theme_bw()
 
-ggsave("~/Downloads/dist_zero_obs_state.png",device=png, dpi=175)
+ggsave("~/Downloads/dist_zero_obs_state.png",
+       width = 7,
+       height =6,
+       device=png, 
+       dpi=250)
 
 library(ggplot2)
 library(GGally)

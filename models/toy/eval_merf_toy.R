@@ -101,8 +101,8 @@ ps_results <- list(res8, res16, res32) %>% reduce(full_join)
 print(ps_results)
 ########################### RF ################################
 rf_res8 = rf_wrapper("y ~ noise1+noise2+real_x", "8", xpop = full_samp, reps=sim_reps, domain_level = "domain")
-rf_res16 = rf_wrapper("y ~ noise1+noise2+real_x", "8", xpop = full_samp, reps=sim_reps, domain_level = "domain")
-rf_res32 = rf_wrapper("y ~ noise1+noise2+real_x", "8", xpop = full_samp, reps=sim_reps, domain_level = "domain")
+rf_res16 = rf_wrapper("y ~ noise1+noise2+real_x", "16", xpop = full_samp, reps=sim_reps, domain_level = "domain")
+rf_res32 = rf_wrapper("y ~ noise1+noise2+real_x", "32", xpop = full_samp, reps=sim_reps, domain_level = "domain")
 
 rf_results <- list(rf_res8, rf_res16, rf_res32) %>% reduce(full_join) %>% 
         mutate(sample_size = as.character(sample_size))
@@ -163,9 +163,13 @@ all_results %>% write.csv("~/Documents/Research/Thesis/RF-Forests/models/toy/res
 
 
 ######################## Evaluate and Plot ##############################
-all_results <- read.csv("~/Documents/Research/Thesis/RF-Forests/models/toy/results500.csv")
+all_results <- read.csv("~/Documents/Research/Thesis/RF-Forests/models/toy/results500_v2.csv")
 
-all_results <- all_results %>% filter(model != "rf")
+res2 <- list(all_results %>% filter(model != "rf"), rf_results %>% mutate(sample_size = as.integer(sample_size))) %>% reduce(full_join)
+
+res2 %>% write.csv("~/Documents/Research/Thesis/RF-Forests/models/toy/results500_v2.csv")
+
+all_results <- read.csv("~/Documents/Research/Thesis/RF-Forests/models/toy/results500_v2.csv")
 
 # get bias results
 e_bias_results <- all_results %>% 
@@ -184,53 +188,139 @@ e_var_results <- all_results %>%
   summarise(e_var = (2000/1999)*mean((BA_hat - sim_est)^2)) %>% 
   ungroup() 
 
-
+e_rmse_results <- e_var_results %>% left_join(e_bias_results, by= c("domain", "model", "sample_size")) %>% 
+  mutate(remse = sqrt(e_var+e_bias^2))
+e_rmse_results
 # plot bias
-unique(e_bias_results$model)
-
+# unique(e_bias_results$model)
+# 
+# e_bias_results %>% 
+#   mutate(subsection = str_sub(domain, -2L, -1L)) %>% 
+#   mutate(subsection_label = paste0("Subsection ", subsection)) %>% 
+#   mutate(sample_size = fct_relevel(sample_size, c("8", "16", "32"))) %>% 
+#   ggplot(aes(x = sample_size, y = e_bias, fill = model)) +
+#   geom_col(position = "dodge", alpha = 0.9, color = "grey50") +
+#   facet_wrap(~subsection_label, ncol = 4) +
+#   scale_fill_manual(
+#     values = c("#92abd6", "#3a32d1", "#d94c4c", "#96b88d", "#fcba03"),
+#     labels = c("Area EBLUP", "Post-Stratified", "RF", "SMERF", "Unit EBLUP")
+#   ) +
+#   labs(x = "Sample Size", y = "Relative Bias", fill = "Model") +
+#   scale_y_continuous(labels = scales::percent) +
+#   theme_bw() +
+#   theme(
+#     text = element_text(size = 20)
+#   ) 
+################### Bias #########################
+# with random forest
 e_bias_results %>% 
   mutate(subsection = str_sub(domain, -2L, -1L)) %>% 
-  mutate(subsection_label = paste0("Subsection ", subsection)) %>% 
+  mutate(subsection_label = paste0("Small Area ", subsection)) %>% 
   mutate(sample_size = fct_relevel(sample_size, c("8", "16", "32"))) %>% 
-  ggplot(aes(x = sample_size, y = abs(perc_rel_e_bias)/100, fill = model)) +
-  geom_col(position = "dodge", alpha = 0.9, color = "grey50") +
-  facet_wrap(~subsection_label, ncol = 4) +
-  scale_fill_manual(
-    values = c("#92abd6", "#3a32d1", "#d94c4c", "#96b88d"),
-    labels = c("Area EBLUP", "Post-Stratified",  "SMERF", "Unit EBLUP")
+  ggplot(aes(x = sample_size, y = e_bias, color = model, group = model)) +
+  geom_line() +
+  facet_wrap(~subsection_label, scale = "free_y", ncol = 4) +
+  scale_color_manual(
+    values = c("#92abd6", "#3a32d1", "#d94c4c", "#96b88d", "#fcba03"),
+    labels = c("Area EBLUP", "Post-Stratified", "RF", "SMERF", "Unit EBLUP")
   ) +
-  labs(x = "Sample Size", y = "Absolute Percent Relative Bias", fill = "Model") +
+  labs(x = "Sample Size", y = "Percent Relative Bias", color = "Model", 
+       title = "Simulation Study: Percent Relative Bias", 
+       subtitle = "Including the Random Forest") +
   scale_y_continuous(labels = scales::percent) +
   theme_bw() +
   theme(
+    legend.position = "bottom",
     text = element_text(size = 20)
   ) 
 
+ggsave("~/Documents/Research/Thesis/RF-Forests/visualization/sim_study/bias_w_rf.png",
+       width = 10, 
+       height = 6, 
+       dpi = 250)
 
 
-
-e_var_results %>%
-  left_join(e_bias_results, by = c("domain", "model", "sample_size")) %>% 
-  mutate(e_mse = e_var + e_bias^2) %>% 
+# without random forest
+e_bias_results %>% 
+  filter(model != "rf") %>% 
   mutate(subsection = str_sub(domain, -2L, -1L)) %>% 
-  mutate(subsection_label = paste0("Subsection ", subsection)) %>% 
-  mutate(sample_size = fct_relevel(sample_size, c("30", "50", "100"))) %>% 
-  ggplot(aes(x = sample_size, y = e_mse, fill = model)) +
-  geom_col(position = "dodge", alpha = 0.9, color = "grey50") +
-  facet_wrap(~subsection_label, ncol = 4) +
-  scale_fill_manual(
-    values = c("#92abd6", "#3a32d1", "#d94c4c", "#96b88d"),
-    labels = c("Area EBLUP", "Post-Stratified",  "SMERF", "Unit EBLUP")
+  mutate(subsection_label = paste0("Small Area ", subsection)) %>% 
+  mutate(sample_size = fct_relevel(sample_size, c("8", "16", "32"))) %>% 
+  ggplot(aes(x = sample_size, y = e_bias, color = model, group = model)) +
+  geom_line() +
+  facet_wrap(~subsection_label, scale = "free_y", ncol = 4) +
+  scale_color_manual(
+    values = c("#92abd6", "#3a32d1", "#96b88d", "#fcba03"),
+    labels = c("Area EBLUP", "Post-Stratified", "SMERF", "Unit EBLUP")
   ) +
-  labs(x = "Sample Size", y = "Empirical MSE", fill = "Model") +
-  theme_bw()  +
+  labs(x = "Sample Size", y = "Percent Relative Bias", fill = "Model", 
+       title = "Simulation Study: Percent Relative Bias", color = "Model",
+       subtitle = "Excluding the Random Forest") +
+  scale_y_continuous(labels = scales::percent) +
+  theme_bw() +
   theme(
+    legend.position = "bottom",
     text = element_text(size = 20)
-  )
+  ) 
+
+ggsave("~/Documents/Research/Thesis/RF-Forests/visualization/sim_study/bias_wo_rf.png",
+       width = 10, 
+       height = 6, 
+       dpi = 250)
+
+############### RMSE ###################
+# without rf 
+e_rmse_results %>% 
+  filter(model != "rf") %>% 
+  mutate(subsection = str_sub(domain, -2L, -1L)) %>% 
+  mutate(subsection_label = paste0("Small Area ", subsection)) %>% 
+  mutate(sample_size = fct_relevel(sample_size, c("8", "16", "32"))) %>% 
+  ggplot(aes(x = sample_size, y = remse, color = model, group = model)) +
+  geom_line() +
+  facet_wrap(~subsection_label, scale = "free_y", ncol = 4) +
+  scale_color_manual(
+    values = c("#92abd6", "#3a32d1", "#96b88d", "#fcba03"),
+    labels = c("Area EBLUP", "Post-Stratified", "SMERF", "Unit EBLUP")
+  ) +
+  labs(x = "Sample Size", y = "Root Mean Squared Error", fill = "Model", 
+       title = "Simulation Study: Root Mean Squared Error", color = "Model",
+       subtitle = "Excluding the Random Forest") +
+  scale_y_continuous(labels = scales::percent) +
+  theme_bw() +
+  theme(
+    legend.position = "bottom",
+    text = element_text(size = 20)
+  ) 
+ggsave("~/Documents/Research/Thesis/RF-Forests/visualization/sim_study/remse_wo_rf.png",
+       width = 10, 
+       height = 6, 
+       dpi = 250)
 
 
-
-
+e_rmse_results %>% 
+  mutate(subsection = str_sub(domain, -2L, -1L)) %>% 
+  mutate(subsection_label = paste0("Small Area ", subsection)) %>% 
+  mutate(sample_size = fct_relevel(sample_size, c("8", "16", "32"))) %>% 
+  ggplot(aes(x = sample_size, y = remse, color = model, group = model)) +
+  geom_line() +
+  facet_wrap(~subsection_label, scale = "free_y", ncol = 4) +
+  scale_color_manual(
+    values = c("#92abd6", "#3a32d1", "#d94c4c", "#96b88d", "#fcba03"),
+    labels = c("Area EBLUP", "Post-Stratified", "RF", "SMERF", "Unit EBLUP")
+  ) +
+  labs(x = "Sample Size", y = "Root Mean Squared Error", fill = "Model", 
+       title = "Simulation Study: Root Mean Squared Error", color = "Model",
+       subtitle = "With the Random Forest") +
+  scale_y_continuous(labels = scales::percent) +
+  theme_bw() +
+  theme(
+    legend.position = "bottom",
+    text = element_text(size = 20)
+  ) 
+ggsave("~/Documents/Research/Thesis/RF-Forests/visualization/sim_study/remse_w_rf.png",
+       width = 10, 
+       height = 6, 
+       dpi = 250)
 
 
 

@@ -82,12 +82,14 @@ get.df <- function(dat.comp) {
                              mutate_all(as.numeric)))
 }
 
-comparison.tcc.emse <- tcc.emse %>% select(section, model, sample_size, e_var) %>%
+comparison.tcc.emse <- tcc.emse %>% select(domain, model, sample_size, e_var) %>%
+  left_join(tcc.bias, by = c("domain", "model", "sample_size")) %>% 
+  mutate(e_mse = e_var + e_bias^2) %>% 
+  select(section, model, sample_size, e_mse) %>% 
   group_by(section, model, sample_size) %>% 
-  pivot_wider(names_from = model, values_from = e_var) %>% 
+  pivot_wider(names_from = model, values_from = e_mse) %>% 
   get.df() #%>% 
-  #mutate(Total = rowSums())
-
+comparison.tcc.emse
 # comparison.tcc.emse <- comparison.tcc.emse %>% 
 #   mutate(Total = rowSums(comparison.tcc.emse %>% 
 #                            select(-Model) %>% 
@@ -100,12 +102,13 @@ comparison.tcc.emse <- tcc.emse %>% select(section, model, sample_size, e_var) %
 #                            select(-Model) %>% 
 #                            mutate_all(as.numeric)))
 
+
 gt(comparison.tcc)%>% tab_header(
     title= md("**Pairwise Bias Comparison**"),
     subtitle = md("*Number of wins of row model over column model (with tcc16)*")
   ) %>%   
   opt_row_striping() %>%
-  cols_align(align = "center") %>%
+  cols_align(align = "center") #%>%
   gtsave("/Users/julianschmitt/Documents/Research/Thesis/RF-Forests/visualization/pairwise_bias_tcc.png")
 
 gt(comparison.tcc.emse) %>% tab_header(
@@ -118,10 +121,15 @@ gt(comparison.tcc.emse) %>% tab_header(
 
 
 # without tcc
-comparison.ntcc.emse <- ntcc.emse %>% select(section, model, sample_size, e_var) %>%
+comparison.ntcc.emse <- ntcc.emse %>% select(domain, model, sample_size, e_var) %>%
+  left_join(ntcc.bias, by = c("domain", "model", "sample_size")) %>% 
+  mutate(e_mse = e_var + e_bias^2) %>% 
+  select(section, model, sample_size, e_mse) %>% 
   group_by(section, model, sample_size) %>% 
-  pivot_wider(names_from = model, values_from = e_var) %>% 
+  pivot_wider(names_from = model, values_from = e_mse) %>% 
   get.df() 
+comparison.ntcc.emse
+
 
 gt(comparison.ntcc.emse) %>% tab_header(
   title= md("**Pairwise Empirical MSE Comparison**"),
